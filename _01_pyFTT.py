@@ -85,10 +85,12 @@ class pyFTT():
             save_folder = self.receiver_torrent_save_folder
             mark_state = create_state(path.join(self.wd_path, wd_entry)).torrent_added_receiver
 
-        torrent_file_name = list(filter(lambda x:x.endswith('.torrent'), listdir(path.join(self.wd_path, wd_entry))))[0]
-        self.qb_client.torrents_add(torrent_files=path.join(self.wd_path, wd_entry, torrent_file_name),
-                                    save_path=save_folder)
-        self._log.info('New torrent added: {}'.format(wd_entry))
+        torrent_files = list(filter(lambda x:x.endswith('.torrent'), listdir(path.join(self.wd_path, wd_entry))))
+        if len(torrent_files) > 0:
+            torrent_file_name = torrent_files[0]
+            self.qb_client.torrents_add(torrent_files=path.join(self.wd_path, wd_entry, torrent_file_name),
+                                        save_path=save_folder)
+            self._log.info('New torrent added: {}'.format(wd_entry))
 
         mark_state()
 
