@@ -1,10 +1,9 @@
-from json import load
 from sys import stdout
+from os import path
 from logging import basicConfig,\
     INFO, DEBUG, WARNING, ERROR, CRITICAL,\
     Formatter,\
-    StreamHandler, FileHandler,\
-    getLogger
+    StreamHandler, FileHandler
 
 def configure_logger():
     class CustomFormatter(Formatter):
@@ -39,28 +38,36 @@ def configure_logger():
                 level=INFO,
                 handlers=[fh,ch])
 
-class baseOPS():
+class states():
+    TORRENT_CREATED = 'TORRENT_CREATED'
+    TORRENT_ADDED_SENDER = 'TORRENT_ADDED_SENDER'
+    TORRENT_ADDED_RECEIVER = 'TORRENT_ADDED_RECEIVER'
+    TORRENT_DOWNLOADED = 'TORRENT_DOWNLOADED'
+    TORRENT_REMOVED = 'TORRENT_REMOVED'
 
-    _log: getLogger
+class create_state():
 
     def __init__(self,
-                 **kwargs):
-        """
-        kwargs:
-            wd_path (str) used to override wd_path from the config
-        """
+                 root):
 
-        self.load_config()
+        self.root = root
 
-        self.wd_path = self.config['wd_path']
-        new_wd_path = kwargs.get('wd_path')
-        if new_wd_path:
-            self._log.info('WD override to {}'.format(new_wd_path))
-            self.wd_path = new_wd_path
-        
-        super(baseOPS, self).__init__()
+    def mark(self,
+             mark_str : str):
+        with open(path.join(self.root, mark_str), 'w') as dummy:
+            pass
 
-    def load_config(self):
-        with open('config.json', 'r') as json_in_handle:
-            self.config = load(json_in_handle)
-        self._log.info('Config loaded succesfully.')
+    def torrent_created(self):
+        self.mark(states.TORRENT_CREATED)
+
+    def torrent_removed(self):
+        self.mark(states.TORRENT_REMOVED)
+
+    def torrent_added_sender(self):
+        self.mark(states.TORRENT_ADDED_SENDER)
+
+    def torrent_added_receiver(self):
+        self.mark(states.TORRENT_ADDED_RECEIVER)
+
+    def torrent_downloaded(self):
+        self.mark(states.TORRENT_DOWNLOADED)
