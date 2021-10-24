@@ -12,6 +12,8 @@ Collection of python scripts which will handle automatic file transfers between 
 
 - It was designed to work as a submodule in other python scripts. See the examples in this repository or usage as a sub-module in https://github.com/ageorge95/slingSHOT-ChiaPlotTransfer for more info.
 
+- It needs qBitorrent installed on both sender[s] and receiver machines
+
 # Feedback/ Contribution
 - Please post any issues you encountered or any feature requests in the issues tab.
 - Also, feel free to contribute to the tool's development with a PR.
