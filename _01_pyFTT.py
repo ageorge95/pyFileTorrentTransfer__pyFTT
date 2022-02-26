@@ -33,9 +33,6 @@ class pyFTT():
         if file_or_folder_to_send and receiver_torrent_save_folder:
             self._log.error('The same instance cannot be the sender and the receiver !')
             exit()
-        if not file_or_folder_to_send and not receiver_torrent_save_folder:
-            self._log.error('You need to provide at least 1 path, either sender_torrent_file_folder or receiver_torrent_save_folder')
-            exit()
 
         self.init_qBitorrent()
 
