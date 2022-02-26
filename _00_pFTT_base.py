@@ -38,14 +38,14 @@ def configure_logger():
                 level=INFO,
                 handlers=[fh,ch])
 
-class states():
+class states:
     TORRENT_CREATED = 'TORRENT_CREATED'
     TORRENT_ADDED_SENDER = 'TORRENT_ADDED_SENDER'
     TORRENT_ADDED_RECEIVER = 'TORRENT_ADDED_RECEIVER'
     TORRENT_DOWNLOADED = 'TORRENT_DOWNLOADED'
     TORRENT_REMOVED = 'TORRENT_REMOVED'
 
-class create_state():
+class create_state:
 
     def __init__(self,
                  root):

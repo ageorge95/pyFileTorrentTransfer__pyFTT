@@ -12,8 +12,8 @@ from time import sleep
 
 class pyFTT():
     def __init__(self,
-                 wd_path: str,
-                 sender_torrent_file_folder : str = None,
+                 working_directory: str,
+                 file_or_folder_to_send : str = None,
                  receiver_torrent_save_folder : str = None,
                  qbHost : str = 'localhost',
                  qbPort : int = 8085,
@@ -22,18 +22,18 @@ class pyFTT():
 
         self._log = getLogger()
 
-        self.wd_path = wd_path
-        self.sender_torrent_file_folder = sender_torrent_file_folder
+        self.working_directory = working_directory
+        self.file_or_folder_to_send = file_or_folder_to_send
         self.receiver_torrent_save_folder = receiver_torrent_save_folder
         self.qbHost = qbHost
         self.qbPort = qbPort
         self.qbPassword = qbPassword
         self.qbUsername = qbUsername
 
-        if sender_torrent_file_folder and receiver_torrent_save_folder:
+        if file_or_folder_to_send and receiver_torrent_save_folder:
             self._log.error('The same instance cannot be the sender and the receiver !')
             exit()
-        if not sender_torrent_file_folder and not receiver_torrent_save_folder:
+        if not file_or_folder_to_send and not receiver_torrent_save_folder:
             self._log.error('You need to provide at least 1 path, either sender_torrent_file_folder or receiver_torrent_save_folder')
             exit()
 
@@ -55,40 +55,65 @@ class pyFTT():
 
     def create_torrent(self):
 
-        if not self.sender_torrent_file_folder:
-            self._log.error('sender_torrent_file_folder was not provided !')
+        if not self.file_or_folder_to_send:
+            self._log.error('file_or_folder_to_send was not provided !')
             exit()
 
-        if not path.isdir(path.join(self.wd_path, path.basename(self.sender_torrent_file_folder))):
-            mkdir(path.join(self.wd_path, path.basename(self.sender_torrent_file_folder)))
+        # create a directory entry for the current file_or_folder_to_send
+        if not path.isdir(
+                path.join(
+                    self.working_directory,
+                    path.basename(self.file_or_folder_to_send)
+                )
+        ):
+            mkdir(
+                path.join(
+                    self.working_directory,
+                    path.basename(self.file_or_folder_to_send)
+                )
+            )
 
-        if not path.isfile(path.join(self.wd_path, path.basename(self.sender_torrent_file_folder), path.basename(self.sender_torrent_file_folder) + '.torrent')):
-            to_exec_str = 'py3createtorrent -t best5 -o "{output_path}" "{file_foler_path}"'
-            exec_out = check_output(to_exec_str.format(file_foler_path = self.sender_torrent_file_folder,
-                                                       output_path = path.join(self.wd_path, path.basename(self.sender_torrent_file_folder)))).decode('utf-8')
+        # create the .torrent file if missing
+        if not path.isfile(
+                path.join(
+                    self.working_directory,
+                    path.basename(self.file_or_folder_to_send),
+                    path.basename(self.file_or_folder_to_send) + '.torrent'
+                )
+        ):
+            to_exec_str = f"py3createtorrent" \
+                          f" -t best5" \
+                          f" -o { path.join(self.working_directory, path.basename(self.file_or_folder_to_send)) }" \
+                          f" { self.file_or_folder_to_send }"
+            exec_out = check_output(to_exec_str).decode('utf-8')
             self._log.info('Torrent creation: {}'.format(str(exec_out)))
         else:
             self._log.warning('.torrent file already exists !')
 
-        create_state(path.join(self.wd_path, path.basename(self.sender_torrent_file_folder))).torrent_created()
+        create_state(
+            path.join(
+                self.working_directory,
+                path.basename(self.file_or_folder_to_send)
+            )
+        ).torrent_created()
 
-        self.add_torrent_to_qBitorrent(wd_entry=path.basename(self.sender_torrent_file_folder))
+        self.add_torrent_to_qBitorrent(wd_entry=path.basename(self.file_or_folder_to_send))
 
     def add_torrent_to_qBitorrent(self,
                                   wd_entry):
         save_folder = None
         mark_state = None
-        if self.sender_torrent_file_folder:
-            save_folder = path.dirname(self.sender_torrent_file_folder)
-            mark_state = create_state(path.join(self.wd_path, path.basename(self.sender_torrent_file_folder))).torrent_added_sender
+        if self.file_or_folder_to_send:
+            save_folder = path.dirname(self.file_or_folder_to_send)
+            mark_state = create_state(path.join(self.working_directory, path.basename(self.file_or_folder_to_send))).torrent_added_sender
         if self.receiver_torrent_save_folder:
             save_folder = self.receiver_torrent_save_folder
-            mark_state = create_state(path.join(self.wd_path, wd_entry)).torrent_added_receiver
+            mark_state = create_state(path.join(self.working_directory, wd_entry)).torrent_added_receiver
 
-        while len(list(filter(lambda x:x.endswith('.torrent'), listdir(path.join(self.wd_path, wd_entry))))) == 0:
+        while len(list(filter(lambda x:x.endswith('.torrent'), listdir(path.join(self.working_directory, wd_entry))))) == 0:
             sleep(5)
-        torrent_file_name = list(filter(lambda x:x.endswith('.torrent'), listdir(path.join(self.wd_path, wd_entry))))[0]
-        self.qb_client.torrents_add(torrent_files=path.join(self.wd_path, wd_entry, torrent_file_name),
+        torrent_file_name = list(filter(lambda x:x.endswith('.torrent'), listdir(path.join(self.working_directory, wd_entry))))[0]
+        self.qb_client.torrents_add(torrent_files=path.join(self.working_directory, wd_entry, torrent_file_name),
                                     save_path=save_folder)
         self._log.info('New torrent added: {}'.format(wd_entry))
 
@@ -96,15 +121,30 @@ class pyFTT():
 
     def thread_monitor_sender(self):
         while True:
-            for entry in listdir(self.wd_path):
-                if path.isfile(path.join(self.wd_path, entry, states.TORRENT_DOWNLOADED)):
-                    if not path.isfile(path.join(self.wd_path, entry, states.TORRENT_REMOVED)):
+            for entry in listdir(self.working_directory):
+                # check if the torrent has been downloaded
+                if path.isfile(
+                        path.join(
+                            self.working_directory,
+                            entry,
+                            states.TORRENT_DOWNLOADED
+                        )
+                ):
+                    # check if the torrent has NOT been removed
+                    if not path.isfile(
+                            path.join(
+                                self.working_directory,
+                                entry,
+                                states.TORRENT_REMOVED
+                            )
+                    ):
                         for torrent in self.qb_client.torrents_info():
                             if torrent.name == entry:
                                 self.qb_client.torrents_delete(delete_files=True,
-                                                                torrent_hashes=torrent.hash)
+                                                               torrent_hashes=torrent.hash)
 
-                                create_state(path.join(self.wd_path, entry)).torrent_removed()
+                                # mark the torrent as being removed
+                                create_state(path.join(self.working_directory, entry)).torrent_removed()
 
                                 self._log.info('{} downloaded by receiver so it was removed.'.format(entry))
             sleep(5)
@@ -112,18 +152,31 @@ class pyFTT():
     def thread_monitor_receiver(self):
         while True:
             # check for new torrents
-            for entry in listdir(self.wd_path):
-                if not path.isfile(path.join(self.wd_path, entry, states.TORRENT_ADDED_RECEIVER)):
+            for entry in listdir(self.working_directory):
+                # check if the torrent has NOT been loaded into qbittorrent
+                if not path.isfile(
+                        path.join(
+                            self.working_directory,
+                            entry,
+                            states.TORRENT_ADDED_RECEIVER
+                        )
+                ):
                     self._log.info('New torrent to be added: {}'.format(entry))
                     self.add_torrent_to_qBitorrent(wd_entry=entry)
 
             # check torrent completion
-            entries = listdir(self.wd_path)
+            entries = listdir(self.working_directory)
             for torrent in self.qb_client.torrents_info():
                 if torrent.name in entries:
-                    if not path.isfile(path.join(self.wd_path, torrent.name, states.TORRENT_DOWNLOADED)):
+                    if not path.isfile(
+                            path.join(
+                                self.working_directory,
+                                torrent.name,
+                                states.TORRENT_DOWNLOADED
+                            )
+                    ):
                         if torrent.state in ["uploading", 'stalledUP']:
                             self._log.info('{} completed. Marking as downloaded ...'.format(torrent.name))
 
-                            create_state(path.join(self.wd_path, torrent.name)).torrent_downloaded()
+                            create_state(path.join(self.working_directory, torrent.name)).torrent_downloaded()
             sleep(5)
