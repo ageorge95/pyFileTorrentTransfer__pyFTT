@@ -120,7 +120,7 @@ class pyFTT():
         self._log.info('New torrent added: {}'.format(wd_entry))
 
 
-    def check_sender(self):
+    def check_sender_remove_torrents(self):
         for entry in listdir(self.working_directory):
             # check if the torrent has been downloaded
             if get_state(self.working_directory,
@@ -140,9 +140,8 @@ class pyFTT():
 
                             self._log.info('{} downloaded by receiver so it was removed.'.format(entry))
 
-    def check_receiver(self,
-                       save_folder):
-
+    def check_receiver_new_torrents(self,
+                                    save_folder):
         entries = listdir(self.working_directory)
 
         # check for new torrents
@@ -154,6 +153,8 @@ class pyFTT():
                 self._log.info('New torrent to be added: {}'.format(entry))
                 self._add_receiver_torrent(wd_entry=entry,
                                            save_folder = save_folder)
+    def check_receiver_torrent_completion(self):
+        entries = listdir(self.working_directory)
 
         # check torrent completion
         for torrent in self.qb_client.torrents_info():
