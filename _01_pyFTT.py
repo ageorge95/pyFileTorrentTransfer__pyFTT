@@ -14,25 +14,14 @@ from time import sleep
 class pyFTT():
     def __init__(self,
                  working_directory: str,
-                 machine_type: str,
                  qbHost : str = 'localhost',
                  qbPort : int = 8085,
                  qbPassword : str = 'admin',
                  qbUsername : str = 'adminadmin'):
-        '''
-
-        :param working_directory:
-        :param machine_type: sender or receiver
-        :param qbHost:
-        :param qbPort:
-        :param qbPassword:
-        :param qbUsername:
-        '''
 
         self._log = getLogger()
 
         self.working_directory = working_directory
-        self.machine_type = machine_type
         self.qbHost = qbHost
         self.qbPort = qbPort
         self.qbPassword = qbPassword
