@@ -75,28 +75,21 @@ class pyFTT():
             )
 
         # create the .torrent file if missing
-        if not path.isfile(
-                path.join(
-                    self.working_directory,
-                    path.basename(file_or_folder_path_to_send),
-                    path.basename(file_or_folder_path_to_send) + '.torrent'
-                )
-        ):
+        if not get_state(self.working_directory,
+                         path.basename(file_or_folder_path_to_send)).verify(states.TORRENT_CREATED):
             to_exec_str = f"py3createtorrent" \
                           f" -t best5" \
                           f" -o { path.join(self.working_directory, path.basename(file_or_folder_path_to_send)) }" \
                           f" { file_or_folder_path_to_send }"
             exec_out = check_output(to_exec_str).decode('utf-8')
             self._log.info('Torrent creation: {}'.format(str(exec_out)))
-        else:
-            self._log.warning('.torrent file already exists !')
 
-        create_state(
-            path.join(
-                self.working_directory,
-                path.basename(file_or_folder_path_to_send)
-            )
-        ).torrent_created()
+            create_state(
+                path.join(
+                    self.working_directory,
+                    path.basename(file_or_folder_path_to_send)
+                )
+            ).torrent_created()
 
     def _add_sender_torrent(self,
                             file_or_folder_path_to_send):
