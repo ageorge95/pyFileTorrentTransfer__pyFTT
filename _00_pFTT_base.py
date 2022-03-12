@@ -3,16 +3,20 @@ from os import path
 from logging import basicConfig,\
     INFO, DEBUG, WARNING, ERROR, CRITICAL,\
     Formatter,\
-    StreamHandler, FileHandler
+    StreamHandler
+from concurrent_log_handler import ConcurrentRotatingFileHandler
 
 def configure_logger():
     class CustomFormatter(Formatter):
+
         grey = "\x1b[38;21m"
         yellow = "\x1b[33;21m"
         red = "\x1b[31;21m"
         bold_red = "\x1b[31;1m"
         reset = "\x1b[0m"
-        format = '%(asctime)s,%(msecs)d %(levelname)-4s [%(filename)s:%(lineno)d -> %(name)s - %(funcName)s] ___ %(message)s'
+        format = '%(asctime)s,%(msecs)d %(levelname)-4s' \
+                 ' [%(filename)s:%(lineno)d ->' \
+                 ' %(name)s - %(funcName)s] ___ %(message)s'
 
         FORMATS = {
             DEBUG: grey + format + reset,
@@ -30,13 +34,21 @@ def configure_logger():
     ch = StreamHandler(stream=stdout)
     ch.setLevel(DEBUG)
     ch.setFormatter(CustomFormatter())
-    fh = FileHandler("runtime_log.log", encoding='utf-8')
+    fh = ConcurrentRotatingFileHandler('runtime_log.log',
+                                       mode='a',
+                                       maxBytes=20*1024*1024,
+                                       backupCount=2)
     fh.setLevel(DEBUG)
-    fh.setFormatter(Formatter('%(asctime)s,%(msecs)d %(levelname)-4s [%(filename)s:%(lineno)d -> %(name)s - %(funcName)s] ___ %(message)s'))
+    fh.setFormatter(Formatter('%(asctime)s,%(msecs)d %(levelname)-4s'
+                              ' [%(filename)s:%(lineno)d ->'
+                              ' %(name)s - %(funcName)s] ___ %(message)s'))
 
     basicConfig(datefmt='%Y-%m-%d:%H:%M:%S',
                 level=INFO,
-                handlers=[fh,ch])
+                handlers=[
+                    fh,
+                    ch
+                ])
 
 class states:
     TORRENT_CREATED = 'TORRENT_CREATED'
@@ -44,6 +56,23 @@ class states:
     TORRENT_ADDED_RECEIVER = 'TORRENT_ADDED_RECEIVER'
     TORRENT_DOWNLOADED = 'TORRENT_DOWNLOADED'
     TORRENT_REMOVED = 'TORRENT_REMOVED'
+
+class get_state:
+    def __init__(self,
+                 root,
+                 item):
+
+        self.root = root
+        self.item = item
+
+    def verify(self,
+               state):
+        if path.join(self.root,
+                     self.item,
+                     state):
+            return True
+        else:
+            return False
 
 class create_state:
 
@@ -54,7 +83,7 @@ class create_state:
 
     def mark(self,
              mark_str : str):
-        with open(path.join(self.root, mark_str), 'w') as dummy:
+        with open(path.join(self.root, mark_str), 'w') as _:
             pass
 
     def torrent_created(self):
