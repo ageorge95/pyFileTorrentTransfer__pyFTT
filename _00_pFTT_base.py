@@ -67,9 +67,9 @@ class get_state:
 
     def verify(self,
                state):
-        if path.join(self.root,
-                     self.item,
-                     state):
+        if path.isfile(path.join(self.root,
+                                 self.item,
+                                 state)):
             return True
         else:
             return False
