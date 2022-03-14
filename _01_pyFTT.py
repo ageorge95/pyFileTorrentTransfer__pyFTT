@@ -85,12 +85,12 @@ class pyFTT():
 
         wd_entry = path.basename(file_or_folder_path_to_send)
         save_folder = path.dirname(file_or_folder_path_to_send)
-        create_state(path.join(self.working_directory,
-                              path.basename(file_or_folder_path_to_send))
-                     ).torrent_added_sender()
 
         self._add_torrent_to_qbitorrent(save_folder,
-                                        wd_entry)
+                                        wd_entry,
+                                        create_state(path.join(self.working_directory,
+                                                     path.basename(file_or_folder_path_to_send))
+                                        ).torrent_added_sender)
 
     def _add_receiver_torrent(self,
                               wd_entry,
@@ -101,16 +101,16 @@ class pyFTT():
 
             self._log.info('New torrent to be added: {}'.format(wd_entry))
 
-            create_state(path.join(self.working_directory,
-                                                wd_entry)
-                         ).torrent_added_receiver()
-
             self._add_torrent_to_qbitorrent(save_folder,
-                                            wd_entry)
+                                            wd_entry,
+                                            create_state(path.join(self.working_directory,
+                                                         wd_entry)
+                                            ).torrent_added_receiver)
 
     def _add_torrent_to_qbitorrent(self,
                                    save_folder,
-                                   wd_entry):
+                                   wd_entry,
+                                   post_exec_func):
 
         while len(list(filter(lambda x:x.endswith('.torrent'), listdir(path.join(self.working_directory, wd_entry))))) == 0:
             sleep(5)
@@ -119,6 +119,7 @@ class pyFTT():
             self.qb_client.torrents_add(torrent_files=path.join(self.working_directory, wd_entry, torrent_file_name),
                                         save_path=save_folder)
             self._log.info('New torrent added: {}'.format(wd_entry))
+            post_exec_func()
         except:
             self._log.warning(f"Failed to add { wd_entry }. Will try again the next cycle.\n{ format_exc(chain=False) }")
 
