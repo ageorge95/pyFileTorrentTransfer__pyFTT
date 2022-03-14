@@ -115,9 +115,12 @@ class pyFTT():
         while len(list(filter(lambda x:x.endswith('.torrent'), listdir(path.join(self.working_directory, wd_entry))))) == 0:
             sleep(5)
         torrent_file_name = list(filter(lambda x:x.endswith('.torrent'), listdir(path.join(self.working_directory, wd_entry))))[0]
-        self.qb_client.torrents_add(torrent_files=path.join(self.working_directory, wd_entry, torrent_file_name),
-                                    save_path=save_folder)
-        self._log.info('New torrent added: {}'.format(wd_entry))
+        try:
+            self.qb_client.torrents_add(torrent_files=path.join(self.working_directory, wd_entry, torrent_file_name),
+                                        save_path=save_folder)
+            self._log.info('New torrent added: {}'.format(wd_entry))
+        except:
+            self._log.warning(f"Failed to add { wd_entry }. Will try again the next cycle.\n{ format_exc(chain=False) }")
 
 
     def check_sender_remove_torrents(self):
