@@ -7,7 +7,8 @@ from logging import getLogger
 from traceback import format_exc
 from os import path,\
     mkdir,\
-    listdir
+    listdir,\
+    remove
 from subprocess import check_output
 from time import sleep
 
@@ -122,6 +123,13 @@ class pyFTT():
             post_exec_func()
         except:
             self._log.warning(f"Failed to add { wd_entry }. Will try again the next cycle.\n{ format_exc(chain=False) }")
+            try:
+                # if the torrent is invalid remove it so that it is recreated in the next cycles
+                remove(path.join(self.working_directory, wd_entry, torrent_file_name))
+                remove(path.join(self.working_directory, wd_entry, states.TORRENT_CREATED))
+                self._log.warning(f"Invalid torrent { torrent_file_name } removed")
+            except:
+                self._log.warning(f"Failed to remove the invalid torrent { torrent_file_name }\n{ format_exc(chain=False) }")
 
 
     def check_sender_remove_torrents(self):
