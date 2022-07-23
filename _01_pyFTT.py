@@ -51,25 +51,33 @@ class pyFTT():
                        file_or_folder_path_to_send):
 
         # create a directory entry for the current file_or_folder_to_send
-        if not path.isdir(
-                path.join(
-                    self.working_directory,
-                    path.basename(file_or_folder_path_to_send)
-                )
-        ):
-            mkdir(
-                path.join(
-                    self.working_directory,
-                    path.basename(file_or_folder_path_to_send)
-                )
-            )
+        # wrap everything in a try except block, as there mught be some bugs, like findign the path
+        while True:
+            try:
+                if not path.isdir(
+                        path.join(
+                            self.working_directory,
+                            path.basename(file_or_folder_path_to_send)
+                        )
+                ):
+                    mkdir(
+                        path.join(
+                            self.working_directory,
+                            path.basename(file_or_folder_path_to_send)
+                        )
+                    )
+
+                break
+            except:
+                self._log.error(f"Error in create_torrent(). Trying again in 1 min ...")
+                sleep(60)
 
         # create the .torrent file if missing
         if not get_state(self.working_directory,
                          path.basename(file_or_folder_path_to_send)).verify(states.TORRENT_CREATED):
             to_exec_str = f"py3createtorrent" \
                           f" -t best5" \
-                          f" -o { path.join(self.working_directory, path.basename(file_or_folder_path_to_send)) }" \
+                          f' -o "{ path.join(self.working_directory, path.basename(file_or_folder_path_to_send)) }"' \
                           f" { file_or_folder_path_to_send }"
             exec_out = check_output(to_exec_str).decode('utf-8')
             self._log.info('Torrent creation: {}'.format(str(exec_out)))
